@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  hamburg-concert-bot:
+    build: .
+    container_name: hamburg-concert-bot
+    restart: unless-stopped
+
+    environment:
+      # Discord Bot Configuration
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CHANNEL_ID: ${DISCORD_CHANNEL_ID}
+
+      # Chrome Configuration for headless operation
+      FERRUM_CHROME_PATH: /usr/bin/chromium
+      DISPLAY: :99
+
+    volumes:
+      # Persist concert data between container restarts
+      - ./data:/app/data
+      # Optional: Mount logs directory
+      - ./logs:/app/logs
+
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+
+    # Resource limits (optional, adjust as needed)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "test", "-f", "/app/data/concerts.json"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Network mode (optional, for additional isolation)
+    networks:
+      - hamburg-bot-network
+
+networks:
+  hamburg-bot-network:
+    driver: bridge
+
+volumes:
+  # Optional: Define named volumes for better management
+  bot-data:
+    driver: local
+  bot-logs:
+    driver: local
